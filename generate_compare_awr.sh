@@ -1,4 +1,4 @@
-#Content of /dbabin/dbatools/diagscript/awr/generate_compare_awr.sh
+#Content of generate_compare_awr.sh
 
 generate_compare_awr()
 {
@@ -33,7 +33,7 @@ l_1_next=$(($l_1_first+1))
 l_2_next=$(($l_2_first+1))
 echo DB1 $l_1_dbid $l_1_dbname $l_1_first $l_1_next
 echo DB2 $l_2_dbid $l_2_dbname $l_2_first $l_2_next
-sqlplus / as sysdba @/dbabin/dbatools/diagscript/awr/generate_compare_awr.sql $l_1_dbid $l_1_first $l_1_next $l_2_dbid $l_2_first $l_2_next
+sqlplus / as sysdba @generate_compare_awr.sql $l_1_dbid $l_1_first $l_1_next $l_2_dbid $l_2_first $l_2_next
 l_1_first=${l_1_next}
 l_2_first=${l_2_next}
 done

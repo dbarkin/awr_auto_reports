@@ -14,7 +14,7 @@ while (( $l_first < $l_endsnapid ))
 do
 l_next=$(($l_first+1))
 echo $l_dbid $l_dbname $l_first $l_next
-sqlplus / as sysdba @/dbabin/dbatools/diagscript/awr/generate_local_awr.sql $l_dbid $l_dbname $l_first $l_next
+sqlplus / as sysdba @generate_local_awr.sql $l_dbid $l_dbname $l_first $l_next
 l_first=${l_next}
 done
 }
