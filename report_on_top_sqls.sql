@@ -1,4 +1,11 @@
 /*
+following privileges have to be granted to user
+
+grant select on dba_hist_sqlstat to dbarkin;
+grant select on dba_hist_snapshot to dbarkin;
+grant select on dba_hist_sqltext  to dbarkin;
+grant select on dba_hist_sql_plan to dbarkin;
+
 
 This SQL select all SQLs ranled by Physical IO, Logical IO, Elapsed Time
 Grouped by DBID, INSTANCE_NUMBER,SNAP_ID
@@ -12,9 +19,7 @@ Will need to suply DBID, INSTANCE_NUMBER,SNAP_ID
 
 */
 
-
-
-
+CREATE OR REPLACE VIEW SQLS_RANKED AS
 SELECT sqls_ranked.* 
 FROM /* ALL SQLs FROM A SPECIFIC SNAPID RANKED BY PH.IO LOGICAL.IO ELAPSED.MS */ 
 (
@@ -39,7 +44,7 @@ SELECT sqls_with_metrics.dbid,instance_number,snap_id,begin_interval_time,end_in
                         , round(sum(DISK_READS_delta)/greatest(sum(executions_delta),1),1) pio_per_exec
                         , round(sum(BUFFER_GETS_delta),1) lio_total
                         , round(sum(BUFFER_GETS_delta)/greatest(sum(executions_delta),1),1) lio_per_exec
-                        , round( sum(ELAPSED_TIME_delta),1) msec_exec_total
+                        , round(sum(ELAPSED_TIME_delta),1/1000) msec_exec_total
                         , round((sum(ELAPSED_TIME_delta)/greatest(sum(executions_delta),1)/1000),5) msec_per_exec
                 FROM dba_hist_sqlstat q
                 LEFT JOIN dba_hist_snapshot s ON (s.snap_id = q.snap_id and s.dbid = q.dbid and s.instance_number = q.instance_number)
@@ -63,3 +68,6 @@ lio_rank<=50
 OR
 ela_rank<=50
       )
+WITH READ ONLY;
+
+
