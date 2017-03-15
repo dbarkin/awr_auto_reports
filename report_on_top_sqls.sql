@@ -72,9 +72,11 @@ prompt Specify DBID for 1st run
 column dbid_1st new_value dbid_1st noprint;
 select '1st run. Use DBID: '||&&dbid_1st,nvl(&&dbid_1st,9999999999) dbid_1st from dual;
 prompt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+column dbid_1st clear;
 prompt Specify instance for 1st run
 column instance_1st new_value instance_1st noprint;
 select '1st run. Use instance: '||&&instance_1st,nvl(&&instance_1st,9999999999) instance_1st from dual;
+column instance_1st clear;
 
 break on inst_name on db_name on host on instart_fmt skip 1;
 ttitle off;
@@ -96,16 +98,18 @@ prompt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 prompt Specify snapshot id for 1st run
 column snap_1st new_value snap_1st noprint;
 select '1st run. Use snapshot: '||&&snap_1st,nvl(&&snap_1st,9999999999) snap_1st from dual;
-
+column snap_1st clear;
  
 prompt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 prompt Specify DBID for 2nd run
 column dbid_2nd new_value dbid_2nd noprint;
 select '2nd run. Use DBID: '||&&dbid_2nd,nvl(&&dbid_2nd,9999999999) dbid_2nd from dual;
 prompt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+column dbid_2nd clear;
 prompt Specify instance for 2nd run
 column instance_2nd new_value instance_2nd noprint;
 select '2nd run. Use instance: '||&&instance_2nd,nvl(&&instance_2nd,9999999999) instance_2nd from dual;
+column instance_2nd clear;
 
 break on inst_name on db_name on host on instart_fmt skip 1;
 ttitle off;
@@ -128,6 +132,7 @@ prompt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 prompt Specify snapshot id for 2nd run
 column snap_2nd new_value snap_2nd noprint;
 select '2nd run. Use snapshot: '||&&snap_2nd,nvl(&&snap_2nd,9999999999) snap_2nd from dual;
+column snap_2nd clear;
 
 set termout on;
 set linesize 8000;
@@ -142,7 +147,24 @@ where DBID=&dbid_1st and snap_id=&snap_1st and INSTANCE_NUMBER=&instance_1st),
       second as (
 select * from SQLS_RANKED
 where DBID=&dbid_2nd and snap_id=&snap_2nd and INSTANCE_NUMBER=&instance_2nd)
-select nvl(first.sql_id,second.sql_id) as sql_id , first.plan_hash_value as first_plan_hash_value,
+select 
+first.db_name                       as db_name_1st,
+first.host_name                     as host_name_1st,
+first.platform_name                 as platform_name_1st,
+first.dbid                          as dbid_1st,
+first.instance_number               as inst_1st,
+first.snap_id                       as snap_1st,
+first.begin_interval_time           as snap_begin_1st,
+first.end_interval_time             as snap_end_1st,
+second.db_name                      as db_name_2nd,
+second.host_name                    as host_name_2nd,
+second.platform_name                as platform_name_2nd,
+second.dbid                         as dbid_2nd,
+second.instance_number              as inst_2nd,
+second.snap_id                      as snap_2nd,
+second.begin_interval_time          as snap_begin_2nd,
+second.end_interval_time            as snap_end_2nd,
+nvl(first.sql_id,second.sql_id) as sql_id , first.plan_hash_value as first_plan_hash_value,
 decode(first.compute_hash_plan,second.compute_hash_plan,'SAME','DIFFERENT') compare_plans,
 first.total_executions                         as total_executions_1st,
 second.total_executions                        as total_executions_2nd,

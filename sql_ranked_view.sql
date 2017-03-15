@@ -23,7 +23,8 @@ CREATE OR REPLACE VIEW SQLS_RANKED AS
 SELECT sqls_ranked.*, sql_text.sql_text
 FROM /* ALL SQLs FROM A SPECIFIC SNAPID RANKED BY PH.IO LOGICAL.IO ELAPSED.MS */ 
 (
-SELECT sqls_with_metrics.dbid,instance_number,snap_id,begin_interval_time,end_interval_time,sqls_with_metrics.sql_id,sqls_with_metrics.plan_hash_value,
+SELECT sqls_with_metrics.db_name,sqls_with_metrics.host_name,sqls_with_metrics.platform_name,
+       sqls_with_metrics.dbid,instance_number,snap_id,begin_interval_time,end_interval_time,sqls_with_metrics.sql_id,sqls_with_metrics.plan_hash_value,
        count_of_plans,
        compute_hash_plan,
        total_executions, 
@@ -39,6 +40,7 @@ SELECT sqls_with_metrics.dbid,instance_number,snap_id,begin_interval_time,end_in
        FROM (   /* ALL SQLs FROM A SPECIFIC SNAPID PH.IO LOGICAL.IO ELAPSED.MS */
                 SELECT    to_char(min(s.begin_interval_time),'YYYY/MM/DD HH24:MI') begin_interval_time 
                         , to_char(min(s.end_interval_time),'YYYY/MM/DD HH24:MI')   end_interval_time
+                        , i.db_name,i.host_name,i.platform_name
                         , s.dbid, s.instance_number, s.snap_id, q.sql_id
                         , q.plan_hash_value
                         , count(q.sql_id) over (partition by s.dbid,s.instance_number,s.snap_id,q.sql_id) count_of_plans
@@ -54,11 +56,12 @@ SELECT sqls_with_metrics.dbid,instance_number,snap_id,begin_interval_time,end_in
                         , round(sum(ELAPSED_TIME_delta),1/1000) total_elapsed_time
                         , round((sum(ELAPSED_TIME_delta)/greatest(sum(executions_delta),1)/1000),5) per_exec_elapsed_time
                 FROM dba_hist_sqlstat q
-                LEFT JOIN dba_hist_snapshot s ON (s.snap_id = q.snap_id and s.dbid = q.dbid and s.instance_number = q.instance_number)
+                JOIN dba_hist_snapshot s ON (s.snap_id = q.snap_id and s.dbid = q.dbid and s.instance_number = q.instance_number)
+                JOIN dba_hist_database_instance i ON (s.dbid = i.dbid and s.instance_number = i.instance_number and s.startup_time = s.startup_time)
                 WHERE 
                       plan_hash_value<>0
                   and q.parsing_schema_name<>'SYS'
-                GROUP BY s.dbid, s.instance_number,s.snap_id, q.sql_id, q.plan_hash_value
+                GROUP BY i.db_name,i.host_name,i.platform_name,s.dbid, s.instance_number,s.snap_id, q.sql_id, q.plan_hash_value
             ) sqls_with_metrics,
             ( /* ALL SQL PLANS HASHED */
                SELECT dbid,sql_id,plan_hash_value,
