@@ -18,7 +18,7 @@ Will need to suply DBID, INSTANCE_NUMBER,SNAP_ID
                   and to_date('2016/11/11 10:10:00','YYYY/MM/DD HH24:MI:SS')  between s.begin_interval_time and s.end_interval_time   -- BASELINE CAPACITY RUN 2ND HOUR SNAPSHOT
 
 */
-
+set define off
 CREATE OR REPLACE VIEW SQLS_RANKED AS
 SELECT sqls_ranked.*, sql_text.sql_text
 FROM /* ALL SQLs FROM A SPECIFIC SNAPID RANKED BY PH.IO LOGICAL.IO ELAPSED.MS */ 
@@ -27,6 +27,13 @@ SELECT sqls_with_metrics.db_name,sqls_with_metrics.host_name,sqls_with_metrics.p
        sqls_with_metrics.dbid,instance_number,snap_id,begin_interval_time,end_interval_time,sqls_with_metrics.sql_id,sqls_with_metrics.plan_hash_value,
        count_of_plans,
        compute_hash_plan,
+--       LISTAGG((SELECT PLAN_TABLE_OUTPUT from table(
+--                                        dbms_xplan.display_awr(sql_id=>sqls_with_metrics.sql_id,
+--                                                               plan_hash_value=>sqls_with_metrics.plan_hash_value,
+--                                                               db_id=>sqls_with_metrics.dbid, 
+--                                                               format=>'ALL')
+--                                    ))                     ,CHR(10)||CHR(13))  WITHIN GROUP (ORDER BY rownum) as sql_plan,
+       sql_plan,
        total_executions, 
        total_physical_read, per_exec_physical_read,
        total_physical_write,per_exec_physical_write,
@@ -36,7 +43,7 @@ SELECT sqls_with_metrics.db_name,sqls_with_metrics.host_name,sqls_with_metrics.p
        DENSE_RANK() OVER (PARTITION BY sqls_with_metrics.dbid,instance_number,snap_id ORDER BY total_buffer_gets DESC NULLS LAST) rank_buffer_gets,
        DENSE_RANK() OVER (PARTITION BY sqls_with_metrics.dbid,instance_number,snap_id ORDER BY total_elapsed_time DESC NULLS LAST) rank_elapsed_time,  
        DENSE_RANK() OVER (PARTITION BY sqls_with_metrics.dbid,instance_number,snap_id ORDER BY total_physical_read DESC NULLS LAST) rank_physical_read,
-       DENSE_RANK() OVER (PARTITION BY sqls_with_metrics.dbid,instance_number,snap_id ORDER BY total_physical_write DESC NULLS LAST) rank_physical_write       
+       DENSE_RANK() OVER (PARTITION BY sqls_with_metrics.dbid,instance_number,snap_id ORDER BY total_physical_write DESC NULLS LAST) rank_physical_write
        FROM (   /* ALL SQLs FROM A SPECIFIC SNAPID PH.IO LOGICAL.IO ELAPSED.MS */
                 SELECT    to_char(min(s.begin_interval_time),'YYYY/MM/DD HH24:MI') begin_interval_time 
                         , to_char(min(s.end_interval_time),'YYYY/MM/DD HH24:MI')   end_interval_time
@@ -66,7 +73,14 @@ SELECT sqls_with_metrics.db_name,sqls_with_metrics.host_name,sqls_with_metrics.p
             ( /* ALL SQL PLANS HASHED */
                SELECT dbid,sql_id,plan_hash_value,
                       standard_hash(listagg(id||operation||options||object_name) 
-                      within group (order by id,operation,options,object_name)) as compute_hash_plan
+                      within group (order by id,operation,options,object_name)) as compute_hash_plan,                      
+                      listagg(LPAD(plan_hash_value,15,' ')||             
+                              LPAD(NVL(cost,0),10,' ') ||
+                              LPAD(id,10,' ')||RPAD(LPAD (' ', DEPTH+1) || 
+                              RPAD(operation,50,' '),60,' ')||
+                              RPAD(options,30,' ')||
+                              RPAD(object_owner,30,' ')||lpad(object_name,30,' ')                              
+                              ,'&lt;br&gt;') within group (order by plan_hash_value,id,operation,options,object_owner,object_name,cost) as sql_plan
                FROM dba_hist_sql_plan 
                GROUP BY dbid,sql_id,plan_hash_value
             ) sql_plans
