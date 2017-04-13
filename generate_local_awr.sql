@@ -17,19 +17,6 @@ define  report_name  = awrrpt_&&inst_num._&&begin_snap._&&end_snap..html
 @?/rdbms/admin/awrrpti.sql
 
 define  num_days     = 0;
-define  db_name      = '&db_name_a';
-define  dbid         = &dbid_a;
-
-define  begin_snap   = &b_snap;
-define  end_snap     = &e_snap;
-define  top_n_sql    = 100;
-define  inst_num     = 2;
-define  report_type  = 'html'
-define  report_name  = awrrpt_&&inst_num._&&begin_snap._&&end_snap..html
-@?/rdbms/admin/awrrpti.sql
-
-
-define  num_days     = 0;
 define  begin_snap   = &b_snap;
 define  end_snap     = &e_snap;
 define  top_n_sql    = 100;
@@ -44,5 +31,18 @@ define  top_n_sql    = 100;
 define  report_type  = 'text'
 define  report_name  = addmrpt_&&begin_snap._&&end_snap..txt
 @?/rdbms/admin/addmrpt.sql
+
+define  num_days     = 0;
+define  db_name      = '&db_name_a';
+define  dbid         = &dbid_a;
+
+define  begin_snap   = &b_snap;
+define  end_snap     = &e_snap;
+define  top_n_sql    = 100;
+define  inst_num     = 2;
+define  report_type  = 'html'
+define  report_name  = awrrpt_&&inst_num._&&begin_snap._&&end_snap..html
+@?/rdbms/admin/awrrpti.sql
+
 exit
 

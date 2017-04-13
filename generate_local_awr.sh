@@ -10,6 +10,9 @@ l_beginsnapid=${3}
 l_first=${l_beginsnapid}
 l_next=0
 l_endsnapid=${4}
+
+sqlplus / as sysdba @generate_local_awr.sql $l_dbid $l_dbname $l_beginsnapid $l_endsnapid
+
 while (( $l_first < $l_endsnapid ))
 do
 l_next=$(($l_first+1))
@@ -18,4 +21,3 @@ sqlplus / as sysdba @generate_local_awr.sql $l_dbid $l_dbname $l_first $l_next
 l_first=${l_next}
 done
 }
-

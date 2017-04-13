@@ -21,9 +21,16 @@ l_2_next=0
 l_2_endsnapid=${6}
 
 if [ $(($l_1_endsnapid-$l_1_beginsnapid)) -ne $(($l_2_endsnapid-$l_2_beginsnapid)) ]; then
-    echo Error! Number of snapshots in first run and second run is not the same!
-    echo Error! First run:  $(($l_1_endsnapid-$l_1_beginsnapid))
-    echo Error! Second run: $(($l_2_endsnapid-$l_2_beginsnapid))	 
+    echo Warning! Number of snapshots in first run and second run is not the same!
+    echo Warning! First run:  $(($l_1_endsnapid-$l_1_beginsnapid))
+    echo Warning! Second run: $(($l_2_endsnapid-$l_2_beginsnapid))	 
+    echo Warning! Will compare only snapshots ${l_1_beginsnapid}:${l_1_endsnapid} to ${l_2_beginsnapid}:${l_2_endsnapid} 
+    l_exit_early=1
+fi
+
+sqlplus / as sysdba @generate_compare_awr.sql ${l_1_dbid} ${l_1_beginsnapid} ${l_1_endsnapid} ${l_2_dbid} ${l_2_beginsnapid} ${l_2_endsnapid}
+
+if [ $l_exit_early -eq 1 ];then 
     exit
 fi
 
@@ -38,4 +45,3 @@ l_1_first=${l_1_next}
 l_2_first=${l_2_next}
 done
 }
-

@@ -1,11 +1,5 @@
 /*
-following privileges have to be granted to user
-
-grant select on dba_hist_sqlstat to dbarkin;
-grant select on dba_hist_snapshot to dbarkin;
-grant select on dba_hist_sqltext  to dbarkin;
-grant select on dba_hist_sql_plan to dbarkin;
-
+REM History 20170413 Added  '<br>' in listagg to enable multiline in excel
 
 This SQL select all SQLs ranled by Physical IO, Logical IO, Elapsed Time
 Grouped by DBID, INSTANCE_NUMBER,SNAP_ID
@@ -80,7 +74,8 @@ SELECT sqls_with_metrics.db_name,sqls_with_metrics.host_name,sqls_with_metrics.p
                               RPAD(operation,50,' '),60,' ')||
                               RPAD(options,30,' ')||
                               RPAD(object_owner,30,' ')||lpad(object_name,30,' ')                              
-                              ,'&lt;br&gt;') within group (order by plan_hash_value,id,operation,options,object_owner,object_name,cost) as sql_plan
+                              --,chr(13)||chr(10)) within group (order by plan_hash_value,id,operation,options,object_owner,object_name,cost) as sql_plan
+                              ,'<br>') within group (order by plan_hash_value,id,operation,options,object_owner,object_name,cost) as sql_plan
                FROM dba_hist_sql_plan 
                GROUP BY dbid,sql_id,plan_hash_value
             ) sql_plans
