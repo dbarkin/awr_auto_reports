@@ -55,7 +55,7 @@ column host       heading "Host"      format a12;
 column SQL_PLAN        ENTMAP OFF
 column SQL_PLAN_FIRST  ENTMAP OFF
 column SQL_PLAN_SECOND ENTMAP OFF
-
+column FILENAME        ENTMAP OFF
 prompt
 prompt
 prompt Instances in this Workload Repository schema
@@ -145,8 +145,9 @@ set linesize 8000;
 SET MARKUP HTML ON;
 set termout on;
 set head on;
-REM spool ON ENTMAP ON PREFORMAT ON;
-spool difference_report_top_sql_multiline.html
+column filename new_val filename
+select 'diff_rpt_sql_mline_&dbid_1st._'||TRIM('&&snap_1st')||'_&dbid_2nd._'||TRIM('&&snap_2nd')||'.html' filename from dual;
+spool &filename
 WITH  first as (
 select * from SQLS_RANKED
 where DBID=&dbid_1st and snap_id=&snap_1st and INSTANCE_NUMBER=&instance_1st),
@@ -224,8 +225,8 @@ from first
 right outer join second on (first.sql_id=second.sql_id)
 order by nvl(second.rank_elapsed_time,first.rank_elapsed_time);
 spool off
-REM spool ON ENTMAP ON PREFORMAT ON;
-spool difference_report_top_sql_singleline.html
+select 'diff_rpt_sql_sline_&dbid_1st._'||TRIM('&&snap_1st')||'_&dbid_2nd._'||TRIM('&&snap_2nd')||'.html' filename from dual;
+spool &filename
 WITH  first as (
 select * from SQLS_RANKED
 where DBID=&dbid_1st and snap_id=&snap_1st and INSTANCE_NUMBER=&instance_1st),
@@ -301,8 +302,8 @@ from first
 right outer join second on (first.sql_id=second.sql_id)
 order by nvl(second.rank_elapsed_time,first.rank_elapsed_time);
 spool off
-REM spool ON ENTMAP ON PREFORMAT ON;
-spool report_top_sql_first.html
+select 'diff_rpt_sql_&dbid_1st._'||TRIM('&&snap_1st')||'.html' filename from dual;
+spool &filename
 WITH  first as (
 select * from SQLS_RANKED
 where DBID=&dbid_1st and snap_id=&snap_1st and INSTANCE_NUMBER=&instance_1st)
@@ -332,9 +333,8 @@ first.sql_plan
 from first
 order by first.rank_elapsed_time;
 spool off
-
-REM spool ON ENTMAP ON PREFORMAT ON;
-spool report_top_sql_second.html
+select 'diff_rpt_sql_&dbid_2nd._'||TRIM('&&snap_2nd')||'.html' filename from dual;
+spool &filename
 WITH  first as (
 select * from SQLS_RANKED
 where DBID=&dbid_2nd and snap_id=&snap_2nd and INSTANCE_NUMBER=&instance_2nd)
