@@ -32,7 +32,7 @@ REM define  snap_2nd     = 2655;
 
 set heading on;
 set timing off veri off space 1 flush on pause off termout on numwidth 10;
-set echo off feedback off pagesize 60 linesize 80 newpage 1 recsep off long 30000;
+set echo off feedback off pagesize 600 linesize 80 newpage 1 recsep off long 30000;
 set trimspool on trimout on define "&" concat "." serveroutput on;
 set underline on;
 clear break compute;
@@ -146,7 +146,7 @@ SET MARKUP HTML ON;
 set termout on;
 set head on;
 REM spool ON ENTMAP ON PREFORMAT ON;
-spool difference_report_top_sql.html;
+spool difference_report_top_sql_multiline.html
 WITH  first as (
 select * from SQLS_RANKED
 where DBID=&dbid_1st and snap_id=&snap_1st and INSTANCE_NUMBER=&instance_1st),
@@ -172,6 +172,7 @@ second.begin_interval_time                        as snap_begin_2nd,
 second.end_interval_time                          as snap_end_2nd,
 nvl(first.sql_id,second.sql_id)                   as sql_id, 
 first.plan_hash_value                             as first_plan_hash_value,
+second.plan_hash_value                            as second_plan_hash_value,
 decode(first.compute_hash_plan,second.compute_hash_plan,'SAME','DIFFERENT') 
                                                   as compare_plans,
 first.total_executions                            as total_executions_1st,
@@ -214,7 +215,6 @@ CAST(DECODE(first.per_exec_physical_write,
                                  0,NULL,
                                    ROUND(((second.per_exec_physical_write-first.per_exec_physical_write)/first.per_exec_physical_write)*100,1)
        ) as NUMBER)                                as change_pct_physical_write,
-second.plan_hash_value                             as second_plan_hash_value,
 second.sql_text,
 first.sql_plan                                     as sql_plan_first,
 second.sql_plan                                    as sql_plan_second,
@@ -224,8 +224,85 @@ from first
 right outer join second on (first.sql_id=second.sql_id)
 order by nvl(second.rank_elapsed_time,first.rank_elapsed_time);
 spool off
-spool ON ENTMAP ON PREFORMAT ON;
-spool report_top_sql_first.html;
+REM spool ON ENTMAP ON PREFORMAT ON;
+spool difference_report_top_sql_singleline.html
+WITH  first as (
+select * from SQLS_RANKED
+where DBID=&dbid_1st and snap_id=&snap_1st and INSTANCE_NUMBER=&instance_1st),
+      second as (
+select * from SQLS_RANKED
+where DBID=&dbid_2nd and snap_id=&snap_2nd and INSTANCE_NUMBER=&instance_2nd)
+select
+first.db_name                                     as db_name_1st,
+first.host_name                                   as host_name_1st,
+first.platform_name                               as platform_name_1st,
+first.dbid                                        as dbid_1st,
+first.instance_number                             as inst_1st,
+first.snap_id                                     as snap_1st,
+first.begin_interval_time                         as snap_begin_1st,
+first.end_interval_time                           as snap_end_1st,
+second.db_name                                    as db_name_2nd,
+second.host_name                                  as host_name_2nd,
+second.platform_name                              as platform_name_2nd,
+second.dbid                                       as dbid_2nd,
+second.instance_number                            as inst_2nd,
+second.snap_id                                    as snap_2nd,
+second.begin_interval_time                        as snap_begin_2nd,
+second.end_interval_time                          as snap_end_2nd,
+nvl(first.sql_id,second.sql_id)                   as sql_id, 
+first.plan_hash_value                             as first_plan_hash_value,
+second.plan_hash_value                            as second_plan_hash_value,
+decode(first.compute_hash_plan,second.compute_hash_plan,'SAME','DIFFERENT') 
+                                                  as compare_plans,
+first.total_executions                            as total_executions_1st,
+second.total_executions                           as total_executions_2nd,
+first.rank_elapsed_time                           as rank_elapsed_time_1st,
+second.rank_elapsed_time                          as rank_elapsed_time_2nd,
+first.per_exec_elapsed_time                       as per_exec_elapsed_time_1st,
+second.per_exec_elapsed_time                      as per_exec_elapsed_time_2nd,
+first.total_elapsed_time                          as total_elapsed_time_1st,
+second.total_elapsed_time                         as total_elapsed_time_2nd,
+CAST(DECODE(first.per_exec_elapsed_time,
+                              NULL,NULL,
+                                 0,NULL,
+                                   ROUND(((second.per_exec_elapsed_time-first.per_exec_elapsed_time)/first.per_exec_elapsed_time)*100,1)
+       ) as NUMBER)                               as change_pct_elapsed_time,
+first.rank_buffer_gets                            as rank_buffer_gets_1st,
+second.rank_buffer_gets                           as rank_buffer_gets_2nd,
+first.per_exec_buffer_gets                        as per_exec_buffer_gets_1st,
+second.per_exec_buffer_gets                       as per_exec_buffer_gets_2nd,
+CAST(DECODE(first.per_exec_buffer_gets,
+                              NULL,NULL,
+                                 0,NULL,
+                                   ROUND(((second.per_exec_buffer_gets-first.per_exec_buffer_gets)/first.per_exec_buffer_gets)*100,1)
+       ) as NUMBER)                               as change_pct_exec_buffer_gets,
+first.rank_physical_read                          as rank_physical_read_1st,
+second.rank_physical_read                         as rank_physical_read_2nd,
+first.per_exec_physical_read                      as per_exec_physical_read_1st,
+second.per_exec_physical_read                     as per_exec_physical_read_2nd,
+CAST(DECODE(first.per_exec_physical_read,
+                              NULL,NULL,
+                                 0,NULL,
+                                   ROUND(((second.per_exec_physical_read-first.per_exec_physical_read)/first.per_exec_physical_read)*100,1)
+       ) as NUMBER)                                as change_pct_physical_read,
+first.rank_physical_write                          as rank_physical_write_1st,
+second.rank_physical_write                         as rank_physical_write_2nd,
+first.per_exec_physical_write                      as per_exec_physical_write_1st,
+second.per_exec_physical_write                     as per_exec_physical_write_2nd,
+CAST(DECODE(first.per_exec_physical_write,
+                              NULL,NULL,
+                                 0,NULL,
+                                   ROUND(((second.per_exec_physical_write-first.per_exec_physical_write)/first.per_exec_physical_write)*100,1)
+       ) as NUMBER)                                as change_pct_physical_write,
+second.sql_text,
+nvl(second.rank_elapsed_time,first.rank_elapsed_time) 
+                                                   as rank_elapsed_time
+from first
+right outer join second on (first.sql_id=second.sql_id)
+order by nvl(second.rank_elapsed_time,first.rank_elapsed_time);
+spool off
+REM spool ON ENTMAP ON PREFORMAT ON;
+spool report_top_sql_first.html
 WITH  first as (
 select * from SQLS_RANKED
 where DBID=&dbid_1st and snap_id=&snap_1st and INSTANCE_NUMBER=&instance_1st)
@@ -256,8 +333,8 @@ from first
 order by first.rank_elapsed_time;
 spool off
 
-spool ON ENTMAP ON PREFORMAT ON;
-spool report_top_sql_second.html;
+REM spool ON ENTMAP ON PREFORMAT ON;
+spool report_top_sql_second.html
 WITH  first as (
 select * from SQLS_RANKED
 where DBID=&dbid_2nd and snap_id=&snap_2nd and INSTANCE_NUMBER=&instance_2nd)
